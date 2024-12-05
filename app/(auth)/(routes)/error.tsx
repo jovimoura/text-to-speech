@@ -1,3 +1,5 @@
+'use client'
+
 import { Empty } from "@/components/ui/empty";
 
 export default function Error() {
