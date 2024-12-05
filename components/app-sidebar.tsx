@@ -10,9 +10,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { AudioLines, Mic, MicVocal } from "lucide-react";
 import { UserAccount } from "./user-account";
+import { getUserSubscriptionPlan } from "@/lib/stripe";
+import { getApiLimitCount, getApiMaxLimitCount } from "@/lib/api-limit";
+import { checkSubscriptionPremium } from "@/lib/subscriptions";
+import { Counter } from "./counter";
 
 const routes = [
   {
@@ -37,6 +41,13 @@ const routes = [
 
 export async function AppSidebar() {
   const user = await currentUser();
+  const { userId } = await auth()
+
+  const subscriptionPlan = await getUserSubscriptionPlan(userId!)
+
+  const apiLimitCount = await getApiLimitCount(userId!)
+  const isPremium = await checkSubscriptionPremium(userId!)
+  const maxLimitCount = await getApiMaxLimitCount(userId!)
   return (
     <Sidebar>
       <SidebarHeader>
@@ -70,10 +81,13 @@ export async function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>{/* <FreeCounter /> */}</SidebarMenuItem>
+          <SidebarMenuItem>
+            <Counter maxLimitCount={maxLimitCount} apiLimitCount={apiLimitCount} isPremium={isPremium} />
+          </SidebarMenuItem>
           <SidebarMenuItem>
             {user && (
               <UserAccount
+                isPremium={isPremium}
                 user={{
                   avatar: user?.imageUrl,
                   email: user?.emailAddresses[0].emailAddress,
