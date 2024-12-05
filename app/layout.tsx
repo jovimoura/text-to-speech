@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Inter } from "next/font/google"
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const font = Inter({ subsets: ["latin"] })
 
@@ -17,11 +19,14 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body
-          className={font.className}
-        >
-          {children}
-        </body>
+        <TooltipProvider>
+          <body
+            className={font.className}
+          >
+            <Toaster />
+            {children}
+          </body>
+        </TooltipProvider>
       </html>
     </ClerkProvider>
   );
