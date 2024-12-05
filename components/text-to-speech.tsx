@@ -1,76 +1,79 @@
-'use client'
+"use client";
 
 import { Voice } from "elevenlabs/api";
-import { Textarea } from "./ui/textarea";
-import { Label } from "./ui/label";
-import { VoiceList } from "./voice-list";
-import { Button } from "./ui/button";
-import { DownloadIcon, Loader2Icon, SparklesIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+
+import {VoiceList} from "@/components/voice-list";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useTTSStore } from "@/store/use-tts-store";
-import React, { useState } from "react";
-import axios from 'axios'
+import { useState } from "react";
+import { DownloadIcon, Loader2Icon, SparklesIcon } from "lucide-react";
+import axios from "axios";
+import { Label } from "./ui/label";
+import { useRouter } from "next/navigation";
 
-interface Props {
-  voices: Voice[]
-}
+export function TextToSpeech({
+  voices,
+}: {
+  voices: Voice[];
+}) {
+  const router = useRouter();
+  const { text, voice, setText } = useTTSStore();
 
-export function TextToSpeech({ voices }: Props) {
-  const router = useRouter()
-  const { setText, setVoice, text, voice } = useTTSStore()
-
-  const [audioUrl, setAudioUrl] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-
+    e.preventDefault();
     setAudioUrl(null)
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       const res = await axios.post(
-        '/api/generate',
+        "/api/generate",
         {
           text,
-          voice
+          voice,
         },
         {
-          responseType: 'blob'
+          responseType: "blob",
         }
-      )
+      );
 
-      router.refresh()
+      router.refresh();
 
-      const audioBlob = res.data
-      const url = URL.createObjectURL(audioBlob)
-      setAudioUrl(url)
+      const audioBlob = res.data;
+      const url = URL.createObjectURL(audioBlob);
+      setAudioUrl(url);
     } catch (error) {
-      // console
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleDownload = () => {
     if (audioUrl) {
-      const a = document.createElement('a')
-      a.href = audioUrl
-      a.download = 'tts_audio.mp3'
-      a.click()
+      const a = document.createElement("a");
+      a.href = audioUrl;
+      a.download = "tts_audio.mp3";
+      a.click();
     }
-  }
+  };
 
+  console.log('audio url', audioUrl)
 
   return (
     <div className="max-w-7xl mx-auto w-full">
       <form onSubmit={handleSubmit} className="flex gap-4">
-        <Textarea 
+        <Textarea
           maxLength={5000}
-          placeholder="Start typing here or paste any text to turn into lifelike speech..."
-          className="border-none outline-none focus-visible:ring-0 focus-visible:ring-transparent shadow-none p-4 md:p-8 resize-none"
+          name="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Start typing here or paste any text you want to turn into lifelike speech..."
+          className="border-none outline-none focus-visible:ring-0 focus-visible:ring-transparent shadow-none min-h-[calc(100vh-70px)] p-4 md:p-8 resize-none"
         />
-        <div className="w-1/2 border-1 p-4 md:p-8 flex flex-col gap-4">
+        <div className="w-1/2 border-l p-4 md:p-8 flex flex-col gap-4">
           <div className="space-y-2">
             <Label>Voices</Label>
             <VoiceList voices={voices} />
@@ -95,13 +98,14 @@ export function TextToSpeech({ voices }: Props) {
                 <source src={audioUrl} type="audio/mpeg" />
               </audio>
 
-              <Button onClick={handleDownload} size='icon'>
+              <Button onClick={handleDownload} size="icon">
                 <DownloadIcon className="size-5" />
               </Button>
             </div>
           )}
+
         </div>
       </form>
     </div>
-  )
+  );
 }

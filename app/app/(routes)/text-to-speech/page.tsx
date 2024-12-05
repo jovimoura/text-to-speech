@@ -7,7 +7,7 @@ export default async function Page() {
   const voicesRes = await elevenlabs.voices.getAll()
   const voices = voicesRes.voices
 
-  // voices here
+  if (!voices) return <div>no voices</div>
 
   return (
     <main className="flex flex-col items-center min-h-screen overflow-y-hidden">

@@ -1,49 +1,60 @@
+"use client";
+
 import { Voice } from "elevenlabs/api";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { useRef, useState } from "react";
-import { useTTSStore } from "@/store/use-tts-store";
-import { Button } from "./ui/button";
 import { PauseIcon, PlayIcon } from "lucide-react";
 
+import { useTTSStore } from "@/store/use-tts-store";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+
 export function VoiceList({ voices }: { voices: Voice[] }) {
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const { setVoice } = useTTSStore()
+  const { setVoice } = useTTSStore();
 
-  const [isPlaying, setIsPlaying] = useState<boolean>(false)
-  const [selectedVoice, setSelectedVoice] = useState<Voice>()
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [selectedVoice, setSelectedVoice] = useState<Voice>();
 
   const handleVoiceSelect = (voiceId: string) => {
-    const voice = voices.find(v => v.voice_id === voiceId)
+    const voice = voices.find((v) => v.voice_id === voiceId);
 
-    setVoice(voice?.name as string)
-    setSelectedVoice(voice)
-    setIsPlaying(true)
+    setVoice(voice?.name as string);
+    setSelectedVoice(voice);
+    setIsPlaying(false);
 
     if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
-  }
+  };
 
-  const handlePause = () => {
-    if (!audioRef.current) return
+  const handlePlayPause = () => {
+    if (!audioRef.current) return;
 
     if (isPlaying) {
-      audioRef.current.pause()
+      audioRef.current.pause();
     } else {
-      audioRef.current.play()
+      audioRef.current.play();
     }
-  }
+  };
+
   return (
     <div className="flex items-center gap-4">
-      <Select>
+      <Select onValueChange={handleVoiceSelect}>
         <SelectTrigger>
-          <SelectValue placeholder="Select voice" />
+          <SelectValue placeholder="Select Voice" />
         </SelectTrigger>
         <SelectContent>
           {voices.map((voice) => (
-            <SelectItem value={voice.voice_id} key={voice.voice_id} >
+            <SelectItem key={voice.voice_id} value={voice.voice_id}>
               {voice.name}
             </SelectItem>
           ))}
@@ -54,15 +65,22 @@ export function VoiceList({ voices }: { voices: Voice[] }) {
         <div>
           <Button
             type="button"
-            size='icon'
-            onClick={handlePause} 
+            size="icon"
+            onClick={handlePlayPause}
           >
-            {isPlaying ? <PauseIcon className="size-5" /> : <PlayIcon className="size-5" />}
+            {isPlaying ? (
+              <PauseIcon className="size-5" />
+            ) : (
+              <PlayIcon className="size-5" />
+            )}
           </Button>
-
-          <audio ref={audioRef} onEnded={() => setIsPlaying(false)} src={selectedVoice.preview_url}/>
+          <audio
+            ref={audioRef}
+            src={selectedVoice.preview_url}
+            onEnded={() => setIsPlaying(false)}
+          />
         </div>
       )}
     </div>
-  )
+  );
 }

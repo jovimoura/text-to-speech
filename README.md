@@ -1,36 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Installing prisma
 
-## Getting Started
+npm i -D prisma
 
-First, run the development server:
+npx prisma init
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npx prisma generate
+
+npx prisma db push
+
+```js
+import { PrismaClient } from "@prisma/client";
+
+export const prisma = new PrismaClient();
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```prisma
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+```js
+export async function streamToBuffer(stream: internal.Readable): Promise<Buffer> {
+  const chunks: Uint8Array[] = []
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+  for await (const chunk of chunks) {
+    chunks.push(chunk)
+  }
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+  return Buffer.concat(chunks)
+}
 
-## Deploy on Vercel
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+````js
+import { elevenlabs } from "@/lib/elevenlabs";
+import { streamToBuffer } from "@/lib/utils";
+import { auth } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import { v4 as uuidv4 } from 'uuid'
+import { Client, Storage } from 'appwrite'
+import { prisma } from "@/lib/prisma";
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+type ResultStorage = {
+  $id: string;
+  bucketId: string;
+  $createdAt: string;
+  $updatedAt: string;
+  $permissions: string[];
+  name: string;
+  signature: string;
+  mimeType: string;
+  sizeOriginal: number;
+  chunksTotal: number;
+  chunksUploaded: number;
+}
+
+const client = new Client()
+      .setEndpoint(process.env.APPWRITE_ENDPOINT as string)
+      .setProject(process.env.APPWRITE_PROJECT as string)
+
+const storage = new Storage(client)
+
+export async function POST (req: Request) {
+  const { userId } = await auth()
+  const { text, voice } = await req.json()
+
+  if(!userId) return new NextResponse('Unauthorized', { status: 500 })
+
+    const audio = await elevenlabs.generate({
+      voice,
+      text,
+      model_id: 'eleven_multilingual_v2'
+    })
+
+    const audioBuffer = await streamToBuffer(audio)
+
+    const audioBlob = new Blob([audioBuffer], { type: 'audio/mpeg' })
+    const audioFile = new File([audioBlob], `${uuidv4()}.mp3` ,{ type: 'audio/mpeg' })
+
+    try {
+      //LETS CONNECT WITH DB AND APPWRITE
+      const result: ResultStorage = await storage.createFile(
+        process.env.APPWRITE_STORAGE as string,
+        uuidv4(),
+        audioFile
+      )
+
+      const newAudio = await prisma.audio.create({
+        data: {
+          audioId: result.$id,
+          bucketId: result.bucketId,
+          permissions: result.$permissions,
+          name: result.name,
+          signature: result.signature,
+          mimeType: result.mimeType,
+          sizeOriginal: result.sizeOriginal,
+          chunksTotal: result.chunksTotal,
+          chunksUploaded: result.chunksUploaded,
+          text,
+          clerkId: userId,
+        }
+      })
+
+      return new NextResponse(audioBuffer, {
+        headers: {
+          "Content-type": "audio/mpeg"
+        }
+      })
+  
+    } catch (error) {
+      return new NextResponse('Error generating audio', { status: 500 })
+    }
+}
+```
