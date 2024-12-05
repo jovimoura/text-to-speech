@@ -1,9 +1,22 @@
-'use client'
+"use client";
 
 import { ChevronDown, CreditCard, LogOut, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "./ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "./ui/sidebar";
 import { useClerk } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -11,44 +24,50 @@ import { createStripeSession } from "@/app/app/actions";
 import { useRouter } from "next/navigation";
 
 interface Props {
-  isPremium: boolean
+  isPremium: boolean;
   user: {
-    name: string
-    email: string
-    avatar: string
-  }
+    name: string;
+    email: string;
+    avatar: string;
+  };
 }
 
 export function UserAccount({ user, isPremium }: Props) {
-  const { isMobile } = useSidebar()
-  const { signOut } = useClerk()
+  const { isMobile } = useSidebar();
+  const { signOut } = useClerk();
 
-  const router = useRouter()
+  const router = useRouter();
 
-  const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleCreateStripeSession = async () => {
-    setIsLoading(true)
-    const { url, error } = await createStripeSession()
+    setIsLoading(true);
+    const { url, error } = await createStripeSession();
 
     if (error) {
       toast({
-        title: 'Error in upgrade button',
+        title: "Error in upgrade button",
         description: "Please try again",
-        variant: "destructive"
-      })
-      setIsLoading(false)
+        variant: "destructive",
+      });
+      setIsLoading(false);
     }
-    setIsLoading(false)
-    window.location.href = url ?? "/app/billing"
-  }
+    setIsLoading(false);
+    window.location.href = url ?? "/app/billing";
+  };
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild className="border-none outline-none focus-visible:ring-0 focus-visible:ring-transparent">
-            <SidebarMenuButton size='lg' className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+          <DropdownMenuTrigger
+            asChild
+            className="border-none outline-none focus-visible:ring-0 focus-visible:ring-transparent"
+          >
+            <SidebarMenuButton
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-lg">CN</AvatarFallback>
@@ -61,9 +80,9 @@ export function UserAccount({ user, isPremium }: Props) {
             </SidebarMenuButton>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent 
+          <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-            side={isMobile ? 'bottom' : 'right'}
+            side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
           >
@@ -79,35 +98,31 @@ export function UserAccount({ user, isPremium }: Props) {
                 </div>
               </div>
             </DropdownMenuLabel>
-            {!isPremium ? (
+            {!isPremium && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="cursor-pointer"
-                    onClick={() => router.push('/app/pricing')}
+                    onClick={() => router.push("/app/pricing")}
                   >
                     <Sparkles />
                     Upgrade to pro
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
               </>
-            ) : (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem 
-                      className="cursor-pointer"
-                      onClick={() => router.push('/app/billing')}
-                    >
-                       <CreditCard />
-                       Billing
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </>
-              
             )}
-            <DropdownMenuItem onClick={() => signOut({ redirectUrl: '/' })}>
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.push("/app/billing")}
+              >
+                <CreditCard />
+                Billing
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => signOut({ redirectUrl: "/" })}>
               <LogOut />
               Log out
             </DropdownMenuItem>
@@ -115,5 +130,5 @@ export function UserAccount({ user, isPremium }: Props) {
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }
